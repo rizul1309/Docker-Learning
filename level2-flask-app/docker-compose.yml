@@ -1,0 +1,38 @@
+# docker-compose.yml lets you run MULTIPLE containers together.
+# One command (docker compose up) starts everything.
+
+version: '3.8'
+
+services:
+
+  # ---------- SERVICE 1: Your Flask App ----------
+  web:
+    build: .                    # Build image from Dockerfile in current dir
+    ports:
+      - "5000:5000"             # Map host port 5000 → container port 5000
+                                # Now visit http://localhost:5000 on your machine
+    environment:
+      # This env var is readable in Python via os.environ["DATABASE_URL"]
+      # "db" here is the SERVICE NAME below — Docker resolves it to the
+      # postgres container's IP automatically (container networking)
+      - DATABASE_URL=postgresql://user:pass@db:5432/mydb
+    depends_on:
+      - db                      # Start the db service BEFORE this one
+
+  # ---------- SERVICE 2: PostgreSQL Database ----------
+  db:
+    image: postgres:15          # Pull official postgres image from Docker Hub
+    volumes:
+      - pgdata:/var/lib/postgresql/data   # Persist data (see below)
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=mydb
+
+# ---------- VOLUMES ----------
+# Without this, your database data disappears when the container stops.
+# "pgdata" is a named volume — Docker manages the storage location.
+# Data survives container restarts, rebuilds, and even "docker compose down".
+# Only "docker compose down -v" deletes volumes.
+volumes:
+  pgdata:

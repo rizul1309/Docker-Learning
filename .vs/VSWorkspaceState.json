@@ -1,0 +1,14 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\level5-batch-processing-system",
+    "\\level5-batch-processing-system\\src",
+    "\\level5-batch-processing-system\\src\\Api",
+    "\\level5-batch-processing-system\\src\\Api\\bin\\Debug",
+    "\\level5-batch-processing-system\\src\\ui",
+    "\\level5-batch-processing-system\\src\\ui\\src",
+    "\\level5-batch-processing-system\\src\\Worker"
+  ],
+  "SelectedNode": "\\level5-batch-processing-system\\src\\Api\\Program.cs",
+  "PreviewInSolutionExplorer": false
+}

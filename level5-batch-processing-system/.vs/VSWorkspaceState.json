@@ -1,0 +1,12 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\nginx",
+    "\\src",
+    "\\src\\Api",
+    "\\src\\Api\\Data",
+    "\\src\\Worker"
+  ],
+  "SelectedNode": "\\src\\Api\\Data\\BatchDbContext.cs",
+  "PreviewInSolutionExplorer": false
+}

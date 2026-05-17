@@ -1,0 +1,40 @@
+# ============================================================
+# .NET MULTI-STAGE BUILD — Worker Service
+# ============================================================
+# Same pattern as the API Dockerfile, but for the background worker.
+# The worker doesn't serve HTTP — it just consumes RabbitMQ messages.
+#
+# KEY DIFFERENCE: We use the base "dotnet/runtime" image instead of
+# "dotnet/aspnet" because the worker doesn't need ASP.NET (no HTTP).
+# This makes the image even smaller.
+#
+#   aspnet:8.0  = ~90MB  (includes HTTP server, Kestrel, etc.)
+#   runtime:8.0 = ~85MB  (just the .NET runtime, no web stuff)
+# ============================================================
+
+
+# ---- STAGE 1: BUILD ----
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+COPY src/Worker/Worker.csproj ./Worker/
+RUN dotnet restore ./Worker/Worker.csproj
+
+COPY src/Worker/ ./Worker/
+RUN dotnet publish ./Worker/Worker.csproj -c Release -o /app/publish --no-restore
+
+
+# ---- STAGE 2: RUNTIME ----
+# Using dotnet/runtime (not aspnet) because this isn't a web app
+FROM mcr.microsoft.com/dotnet/runtime:8.0 AS runtime
+WORKDIR /app
+
+COPY --from=build /app/publish .
+
+USER app
+
+# No EXPOSE needed — the worker doesn't listen on any port.
+# No HEALTHCHECK via HTTP — you'd monitor this via RabbitMQ consumer count
+# or a sidecar health check process.
+
+ENTRYPOINT ["dotnet", "Worker.dll"]

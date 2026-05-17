@@ -1,0 +1,242 @@
+[agent]
+  collection_jitter = "0s"
+  debug = false
+  flush_interval = "1s"
+  flush_jitter = "0s"
+  hostname = ""
+  interval = "60s"
+  logfile = "C:\\ProgramData\\Amazon\\AmazonCloudWatchAgent\\Logs\\amazon-cloudwatch-agent.log"
+  logtarget = "lumberjack"
+  metric_batch_size = 1000
+  metric_buffer_limit = 10000
+  omit_hostname = false
+  precision = ""
+  quiet = false
+  round_interval = false
+
+[inputs]
+
+  [[inputs.logfile]]
+    destination = "cloudwatchlogs"
+    file_state_folder = "C:\\ProgramData\\Amazon\\AmazonCloudWatchAgent\\Logs\\state"
+
+    [[inputs.logfile.file_config]]
+      deployment_environment = ""
+      file_path = "c:\\s3sync\\log\\s3sync.log"
+      from_beginning = true
+      log_group_class = ""
+      log_group_name = "/nonprod/fusion/ec2/s3sync.log"
+      log_stream_name = "i-00acc0413ebfc71f1"
+      pipe = false
+      retention_in_days = -1
+      service_name = ""
+
+    [[inputs.logfile.file_config]]
+      deployment_environment = ""
+      file_path = "c:\\s3sync\\log\\s3sync.stderr.log"
+      from_beginning = true
+      log_group_class = ""
+      log_group_name = "/nonprod/fusion/ec2/s3sync.stderr.log"
+      log_stream_name = "i-00acc0413ebfc71f1"
+      pipe = false
+      retention_in_days = -1
+      service_name = ""
+
+    [[inputs.logfile.file_config]]
+      deployment_environment = ""
+      file_path = "c:\\cfn\\log\\cfn-init.log"
+      from_beginning = true
+      log_group_class = ""
+      log_group_name = "/nonprod/fusion/ec2/cfn-init.log"
+      log_stream_name = "i-00acc0413ebfc71f1"
+      pipe = false
+      retention_in_days = -1
+      service_name = ""
+
+    [[inputs.logfile.file_config]]
+      deployment_environment = ""
+      file_path = "c:\\cfn\\log\\cfn-init-cmd.log"
+      from_beginning = true
+      log_group_class = ""
+      log_group_name = "/nonprod/fusion/ec2/cfn-init-cmd.log"
+      log_stream_name = "i-00acc0413ebfc71f1"
+      pipe = false
+      retention_in_days = -1
+      service_name = ""
+
+    [[inputs.logfile.file_config]]
+      deployment_environment = ""
+      file_path = "c:\\cfn\\log\\cfn-wire.log"
+      from_beginning = true
+      log_group_class = ""
+      log_group_name = "/nonprod/fusion/ec2/cfn-wire.log"
+      log_stream_name = "i-00acc0413ebfc71f1"
+      pipe = false
+      retention_in_days = -1
+      service_name = ""
+
+    [[inputs.logfile.file_config]]
+      auto_removal = true
+      deployment_environment = ""
+      file_path = "c:\\cfn\\log\\healthcheck.log"
+      from_beginning = true
+      log_group_class = ""
+      log_group_name = "/nonprod/fusion/ec2/healthcheck.log"
+      log_stream_name = "i-00acc0413ebfc71f1"
+      pipe = false
+      retention_in_days = -1
+      service_name = ""
+
+    [[inputs.logfile.file_config]]
+      auto_removal = true
+      deployment_environment = ""
+      file_path = "c:\\cfn\\log\\healthcheck.stderr.log"
+      from_beginning = true
+      log_group_class = ""
+      log_group_name = "/nonprod/fusion/ec2/healthcheck.stderr.log"
+      log_stream_name = "i-00acc0413ebfc71f1"
+      pipe = false
+      retention_in_days = -1
+      service_name = ""
+
+    [[inputs.logfile.file_config]]
+      deployment_environment = ""
+      file_path = "c:\\inetpub\\logs\\LogFiles\\W3SVC1\\u_*.log"
+      from_beginning = true
+      log_group_class = ""
+      log_group_name = "/nonprod/fusion/ec2/w3svc1/default.log"
+      log_stream_name = "i-00acc0413ebfc71f1"
+      pipe = false
+      retention_in_days = -1
+      service_name = ""
+
+    [[inputs.logfile.file_config]]
+      deployment_environment = ""
+      file_path = "c:\\FusionUpdateServer\\Temp\\*.log"
+      from_beginning = true
+      log_group_class = ""
+      log_group_name = "/nonprod/fusion/ec2/fusion-update-server.log"
+      log_stream_name = "i-00acc0413ebfc71f1"
+      pipe = false
+      retention_in_days = -1
+      service_name = ""
+
+    [[inputs.logfile.file_config]]
+      deployment_environment = ""
+      file_path = "C:\\ProgramData\\Amazon\\SSM\\Logs\\*.log"
+      from_beginning = true
+      log_group_class = ""
+      log_group_name = "/nonprod/fusion/ec2/ssm.log"
+      log_stream_name = "i-00acc0413ebfc71f1"
+      pipe = false
+      retention_in_days = -1
+      service_name = ""
+
+  [[inputs.statsd]]
+    interval = "60s"
+    parse_data_dog_tags = true
+    service_address = ":8125"
+    [inputs.statsd.tags]
+      "aws:AggregationInterval" = "60s"
+
+  [[inputs.win_perf_counters]]
+    DisableReplacer = true
+    alias = "4283769065"
+    interval = "60s"
+
+    [[inputs.win_perf_counters.object]]
+      Counters = ["% Free Space"]
+      Instances = ["*"]
+      Measurement = "LogicalDisk"
+      ObjectName = "LogicalDisk"
+      WarnOnMissing = true
+
+  [[inputs.win_perf_counters]]
+    DisableReplacer = true
+    alias = "1492679118"
+    interval = "60s"
+
+    [[inputs.win_perf_counters.object]]
+      Counters = ["% Committed Bytes In Use"]
+      Instances = ["------"]
+      Measurement = "Memory"
+      ObjectName = "Memory"
+      WarnOnMissing = true
+
+  [[inputs.win_perf_counters]]
+    DisableReplacer = true
+    alias = "1063858558"
+    interval = "60s"
+
+    [[inputs.win_perf_counters.object]]
+      Counters = ["Bytes Received/sec", "Bytes Sent/sec"]
+      Instances = ["*"]
+      Measurement = "Network Interface"
+      ObjectName = "Network Interface"
+      WarnOnMissing = true
+
+  [[inputs.win_perf_counters]]
+    DisableReplacer = true
+    alias = "3762679655"
+
+    [[inputs.win_perf_counters.object]]
+      Counters = ["% Processor Time"]
+      Instances = ["_Total"]
+      Measurement = "Processor"
+      ObjectName = "Processor"
+      WarnOnMissing = true
+
+  [[inputs.windows_event_log]]
+    destination = "cloudwatchlogs"
+    file_state_folder = "C:\\ProgramData\\Amazon\\AmazonCloudWatchAgent\\Logs\\state"
+
+    [[inputs.windows_event_log.event_config]]
+      batch_read_size = 170
+      event_format = "xml"
+      event_levels = ["3", "2", "1"]
+      event_name = "System"
+      log_group_class = ""
+      log_group_name = "/nonprod/fusion/ec2/windows_events/system"
+      log_stream_name = "i-00acc0413ebfc71f1"
+      retention_in_days = -1
+
+    [[inputs.windows_event_log.event_config]]
+      batch_read_size = 170
+      event_format = "xml"
+      event_levels = ["3", "2", "1"]
+      event_name = "Security"
+      log_group_class = ""
+      log_group_name = "/nonprod/fusion/ec2/windows_events/security"
+      log_stream_name = "i-00acc0413ebfc71f1"
+      retention_in_days = -1
+
+    [[inputs.windows_event_log.event_config]]
+      batch_read_size = 170
+      event_format = "xml"
+      event_levels = ["3", "2", "1"]
+      event_name = "Application"
+      log_group_class = ""
+      log_group_name = "/nonprod/fusion/ec2/windows_events/application"
+      log_stream_name = "i-00acc0413ebfc71f1"
+      retention_in_days = -1
+
+    [[inputs.windows_event_log.event_config]]
+      batch_read_size = 170
+      event_format = "xml"
+      event_levels = ["3", "2", "1"]
+      event_name = "CrowdStrike-Falcon Sensor-CSFalconService/Operational"
+      log_group_class = ""
+      log_group_name = "/nonprod/fusion/ec2/windows_events/crowd_strike"
+      log_stream_name = "i-00acc0413ebfc71f1"
+      retention_in_days = -1
+
+[outputs]
+
+  [[outputs.cloudwatch]]
+
+  [[outputs.cloudwatchlogs]]
+    force_flush_interval = "5s"
+    log_stream_name = "i-00acc0413ebfc71f1"
+    mode = "EC2"
+    region = "ap-southeast-2"
+    region_type = "EC2M"

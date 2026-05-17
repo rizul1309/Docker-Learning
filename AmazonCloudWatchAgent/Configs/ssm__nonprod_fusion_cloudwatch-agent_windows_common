@@ -1,0 +1,157 @@
+{
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "c:\\s3sync\\log\\s3sync.log",
+            "log_group_name": "/nonprod/fusion/ec2/s3sync.log",
+            "log_stream_name": "{instance_id}"
+          },
+          {
+            "file_path": "c:\\s3sync\\log\\s3sync.stderr.log",
+            "log_group_name": "/nonprod/fusion/ec2/s3sync.stderr.log",
+            "log_stream_name": "{instance_id}"
+          },
+          {
+            "file_path": "c:\\cfn\\log\\cfn-init.log",
+            "log_group_name": "/nonprod/fusion/ec2/cfn-init.log",
+            "log_stream_name": "{instance_id}"
+          },
+          {
+            "file_path": "c:\\cfn\\log\\cfn-init-cmd.log",
+            "log_group_name": "/nonprod/fusion/ec2/cfn-init-cmd.log",
+            "log_stream_name": "{instance_id}"
+          },
+          {
+            "file_path": "c:\\cfn\\log\\cfn-wire.log",
+            "log_group_name": "/nonprod/fusion/ec2/cfn-wire.log",
+            "log_stream_name": "{instance_id}"
+          },
+          {
+            "file_path": "c:\\cfn\\log\\healthcheck.log",
+            "log_group_name": "/nonprod/fusion/ec2/healthcheck.log",
+            "log_stream_name": "{instance_id}",
+            "auto_removal": true
+          },
+          {
+            "file_path": "c:\\cfn\\log\\healthcheck.stderr.log",
+            "log_group_name": "/nonprod/fusion/ec2/healthcheck.stderr.log",
+            "log_stream_name": "{instance_id}",
+            "auto_removal": true
+          },
+          {
+            "file_path": "c:\\inetpub\\logs\\LogFiles\\W3SVC1\\u_*.log",
+            "log_group_name": "/nonprod/fusion/ec2/w3svc1/default.log",
+            "log_stream_name": "{instance_id}"
+          },
+          {
+            "file_path": "c:\\FusionUpdateServer\\Temp\\*.log",
+            "log_group_name": "/nonprod/fusion/ec2/fusion-update-server.log",
+            "log_stream_name": "{instance_id}"
+          },
+          {
+            "file_path": "C:\\ProgramData\\Amazon\\SSM\\Logs\\*.log",
+            "log_group_name": "/nonprod/fusion/ec2/ssm.log",
+            "log_stream_name": "{instance_id}"
+          }
+        ]
+      },
+      "windows_events": {
+        "collect_list": [
+          {
+            "event_format": "xml",
+            "event_levels": [
+              "WARNING",
+              "ERROR",
+              "CRITICAL"
+            ],
+            "event_name": "System",
+            "log_group_name": "/nonprod/fusion/ec2/windows_events/system",
+            "log_stream_name": "{instance_id}"
+          },
+          {
+            "event_format": "xml",
+            "event_levels": [
+              "WARNING",
+              "ERROR",
+              "CRITICAL"
+            ],
+            "event_name": "Security",
+            "log_group_name": "/nonprod/fusion/ec2/windows_events/security",
+            "log_stream_name": "{instance_id}"
+          },
+          {
+            "event_format": "xml",
+            "event_levels": [
+              "WARNING",
+              "ERROR",
+              "CRITICAL"
+            ],
+            "event_name": "Application",
+            "log_group_name": "/nonprod/fusion/ec2/windows_events/application",
+            "log_stream_name": "{instance_id}"
+          },
+          {
+            "event_format": "xml",
+            "event_levels": [
+              "WARNING",
+              "ERROR",
+              "CRITICAL"
+            ],
+            "event_name": "CrowdStrike-Falcon Sensor-CSFalconService/Operational",
+            "log_group_name": "/nonprod/fusion/ec2/windows_events/crowd_strike",
+            "log_stream_name": "{instance_id}"
+          }
+        ]
+      }
+    }
+  },
+  "metrics": {
+    "append_dimensions": {
+      "AutoScalingGroupName":"${aws:AutoScalingGroupName}",
+      "InstanceId": "${aws:InstanceId}"
+    },
+    "aggregation_dimensions": [["AutoScalingGroupName", "InstanceId"], ["InstanceId", "instance", "objectname"], ["InstanceId", "objectname"]],
+    "metrics_collected": {
+      "Processor": {
+        "measurement": [
+          "% Processor Time"
+        ],
+        "resources": [
+          "_Total"
+        ]
+      },
+      "LogicalDisk": {
+        "measurement": [
+          "% Free Space"
+        ],
+        "metrics_collection_interval": 60,
+        "resources": [
+          "*"
+        ]
+      },
+      "Memory": {
+        "measurement": [
+          "% Committed Bytes In Use"
+        ],
+        "metrics_collection_interval": 60
+      },
+      "Network Interface": {
+        "metrics_collection_interval": 60,
+        "measurement": [
+          "Bytes Received/sec",
+          "Bytes Sent/sec"
+        ],
+        "resources": [
+          "*"
+        ]
+      },
+      "statsd": {
+        "metrics_aggregation_interval": 60,
+        "metrics_collection_interval": 60,
+        "service_address": ":8125"
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+# .NET build artifacts (equivalent of Python's __pycache__)
+**/bin/
+**/obj/
+
+# IDE files
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Git
+.git
+.gitignore
+
+# Docker
+docker-compose*.yml
+Dockerfile*
+
+# Documentation
+*.md
+
+# Environment files
+.env

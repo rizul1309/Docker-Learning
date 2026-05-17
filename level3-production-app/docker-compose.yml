@@ -1,0 +1,132 @@
+# ============================================================
+# PRODUCTION-GRADE DOCKER COMPOSE
+# ============================================================
+# What's different from Level 2:
+# - Resource limits (CPU/memory) so one container can't kill the host
+# - Health checks for automatic restart on failure
+# - Redis added as a cache layer
+# - Nginx as a reverse proxy in front of Flask
+# - Restart policies for self-healing
+# - Logging configuration
+# - Multiple networks (frontend vs backend isolation)
+# ============================================================
+
+services:
+
+  # ---------- NGINX (Reverse Proxy) ----------
+  # In production, you NEVER expose Flask/Gunicorn directly to the internet.
+  # Nginx sits in front and handles:
+  # - SSL/TLS termination (HTTPS)
+  # - Static file serving
+  # - Load balancing across multiple app containers
+  # - Request buffering and rate limiting
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"                        # Map host port 8080 → container port 80 (80 was taken)
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro   # :ro = read-only mount
+    depends_on:
+      web:
+        condition: service_healthy        # Wait for web to be HEALTHY, not just started
+    restart: unless-stopped               # Auto-restart unless you manually stop it
+    networks:
+      - frontend                          # Nginx only needs frontend network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+
+  # ---------- FLASK APP ----------
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://user:pass@db:5432/mydb
+      - REDIS_URL=redis://redis:6379/0
+      - FLASK_ENV=production
+      - APP_VERSION=1.0.0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s                   # Give the app 10s to start before checking
+    networks:
+      - frontend                          # Can receive requests from nginx
+      - backend                           # Can reach db and redis
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 256M
+        reservations:                     # Minimum guaranteed resources
+          cpus: '0.25'
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"                   # Max 10MB per log file
+        max-file: "3"                     # Keep 3 rotated log files
+
+  # ---------- POSTGRESQL ----------
+  db:
+    image: postgres:15
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=mydb
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d mydb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend                           # Only accessible from backend network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+
+  # ---------- REDIS (Cache) ----------
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+
+# ---------- NETWORKS ----------
+# Two separate networks for security isolation:
+# - frontend: nginx ↔ web (public-facing traffic)
+# - backend:  web ↔ db, web ↔ redis (internal only)
+#
+# The database and redis are NOT on the frontend network,
+# so even if nginx is compromised, the attacker can't reach the DB directly.
+networks:
+  frontend:
+  backend:
+
+volumes:
+  pgdata:

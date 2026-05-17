@@ -1,0 +1,212 @@
+# ============================================================
+# LEVEL 4 — .NET + Redis + RabbitMQ + Background Worker
+# ============================================================
+# What's new from Level 3:
+#   - .NET 8 instead of Python/Flask (compiled, statically typed)
+#   - RabbitMQ message broker (async communication between services)
+#   - Background worker service (consumes messages from RabbitMQ)
+#   - Redis used for BOTH caching AND pub/sub
+#   - 5 services total (api, worker, redis, rabbitmq, nginx)
+#   - RabbitMQ management UI (monitor queues, messages, consumers)
+#
+# ARCHITECTURE:
+#   Browser → Nginx → .NET API → Redis (cache)
+#                              → RabbitMQ (message broker)
+#                                    ↓
+#                              Worker (background consumer)
+# ============================================================
+
+services:
+
+  # ---------- NGINX (Reverse Proxy) ----------
+  # Same role as Level 3 — sits in front of the .NET API.
+  # The only service exposed to the outside world.
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - frontend
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+
+  # ---------- .NET API ----------
+  # The main web API. Handles HTTP requests, talks to Redis and RabbitMQ.
+  # Equivalent of the Flask "web" service from Level 3.
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    environment:
+      # .NET uses __ (double underscore) for nested config keys.
+      # Redis__ConnectionString maps to Configuration["Redis:ConnectionString"]
+      - Redis__ConnectionString=redis:6379
+      - RabbitMQ__Host=rabbitmq
+      - ASPNETCORE_ENVIRONMENT=Production
+      # .NET 8 listens on 8080 by default, but we can override:
+      - ASPNETCORE_URLS=http://+:8080
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 15s
+    networks:
+      - frontend
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ---------- BACKGROUND WORKER ----------
+  # Consumes messages from RabbitMQ and processes them.
+  # This is a SEPARATE container — it doesn't serve HTTP.
+  # You can scale this independently: docker compose up --scale worker=3
+  # That gives you 3 workers consuming from the same queue in parallel.
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ---------- REDIS ----------
+  # In-memory data store. Used for:
+  #   1. Caching (store expensive query results)
+  #   2. Pub/Sub (real-time notifications)
+  #   3. Session storage (if you had user sessions)
+  #
+  # Redis is FAST because everything is in RAM:
+  #   Redis GET:     ~0.1ms
+  #   PostgreSQL SELECT: ~5-50ms
+  #   External API call: ~100-500ms
+  #
+  # The --maxmemory and --maxmemory-policy flags are CRITICAL in production:
+  #   Without them: Redis grows until it eats all RAM → server crashes
+  #   With them: Redis evicts old keys when it hits the limit → safe
+  #
+  # Eviction policies:
+  #   allkeys-lru    = Remove Least Recently Used keys (most common)
+  #   volatile-lru   = Remove LRU keys that have an expiry set
+  #   allkeys-random = Remove random keys
+  #   noeviction     = Return errors when memory is full (dangerous!)
+  redis:
+    image: redis:7-alpine
+    command: >
+      redis-server
+      --maxmemory 64mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+
+  # ---------- RABBITMQ (Message Broker) ----------
+  # RabbitMQ is the "post office" between your services.
+  #
+  # We use the "management" tag which includes a web UI at port 15672.
+  # This UI lets you:
+  #   - See all queues and their message counts
+  #   - See all exchanges and their bindings
+  #   - See all consumers (which workers are connected)
+  #   - Publish test messages manually
+  #   - Monitor message rates (messages/second)
+  #
+  # Port 5672 = AMQP protocol (what your code connects to)
+  # Port 15672 = Management UI (what you open in your browser)
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      # Expose the management UI so you can see queues in your browser
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s    # RabbitMQ takes a while to start
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+
+# ---------- NETWORKS ----------
+# Same isolation pattern as Level 3:
+#   frontend: nginx ↔ api (public-facing)
+#   backend:  api ↔ redis, api ↔ rabbitmq, worker ↔ rabbitmq
+#
+# The worker, redis, and rabbitmq are NOT on the frontend network.
+# Even if nginx is compromised, the attacker can't reach them directly.
+networks:
+  frontend:
+  backend:
+
+# ---------- VOLUMES ----------
+# Persist data across container restarts:
+#   redis-data: Redis AOF (Append Only File) for durability
+#   rabbitmq-data: RabbitMQ message store and configuration
+volumes:
+  redis-data:
+  rabbitmq-data:

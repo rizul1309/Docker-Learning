@@ -1,0 +1,17 @@
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+
+COPY src/Worker/Worker.csproj ./Worker/
+RUN dotnet restore ./Worker/Worker.csproj
+
+COPY src/Worker/ ./Worker/
+RUN dotnet publish ./Worker/Worker.csproj -c Release -o /app/publish --no-restore
+
+FROM mcr.microsoft.com/dotnet/runtime:9.0 AS runtime
+WORKDIR /app
+
+COPY --from=build /app/publish .
+
+USER app
+
+ENTRYPOINT ["dotnet", "Worker.dll"]

@@ -1,0 +1,58 @@
+# ============================================================
+# .NET MULTI-STAGE BUILD — API Service
+# ============================================================
+# Same concept as Level 3's Python multi-stage build, but for .NET.
+#
+# .NET has an even bigger difference between build and runtime:
+#   Build image (SDK):     ~800MB (compilers, MSBuild, NuGet, analyzers)
+#   Runtime image (ASP.NET): ~90MB (just the runtime, no build tools)
+#
+# Stage 1: Use the full SDK to compile your C# code into a binary
+# Stage 2: Copy ONLY the compiled binary into the slim runtime image
+# ============================================================
+
+
+# ---- STAGE 1: BUILD ----
+# The SDK image has everything needed to compile C# code.
+# "sdk" = Software Development Kit (compilers, build tools, NuGet)
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# Copy the project file first (layer caching — same trick as Python's requirements.txt)
+# "dotnet restore" downloads NuGet packages. This layer is cached unless .csproj changes.
+COPY src/Api/Api.csproj ./Api/
+RUN dotnet restore ./Api/Api.csproj
+
+# Now copy all source code and build
+COPY src/Api/ ./Api/
+RUN dotnet publish ./Api/Api.csproj -c Release -o /app/publish --no-restore
+#                                    ^^^^^^^^^^
+#                                    -c Release = compile in Release mode (optimized)
+#                                    -o /app/publish = output to this folder
+#                                    --no-restore = skip restore (already done above)
+
+
+# ---- STAGE 2: RUNTIME ----
+# The ASP.NET runtime image is MUCH smaller — no compilers, no SDK.
+# "aspnet" = just the runtime needed to RUN a .NET web app.
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+WORKDIR /app
+
+# Copy the compiled binary from the build stage
+COPY --from=build /app/publish .
+
+# Non-root user (same security concept as Level 3)
+# .NET 8 images include a built-in "app" user — no need to create one manually.
+USER app
+
+# .NET listens on port 8080 by default in .NET 8 (changed from 80 in .NET 7)
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+# Start the compiled application
+# In .NET, you run the compiled DLL, not the source code.
+# This is like running a compiled Java .jar — no interpreter needed at runtime.
+ENTRYPOINT ["dotnet", "Api.dll"]

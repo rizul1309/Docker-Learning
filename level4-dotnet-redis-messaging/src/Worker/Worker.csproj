@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+  <!--
+    This is a BACKGROUND WORKER — it runs continuously and processes
+    messages from RabbitMQ. No HTTP endpoints, no web server.
+
+    Think of it as a Python script with "while True: process_next_message()"
+    but with proper lifecycle management, graceful shutdown, and health monitoring.
+
+    In production, you'd have multiple instances of this worker
+    consuming from the same queue for parallel processing.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="RabbitMQ.Client" Version="7.1.2" />
+  </ItemGroup>
+
+</Project>
